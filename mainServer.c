@@ -7,13 +7,19 @@
 #include <string.h>
 
 #define CONFIG_PATH "./so_config"
+#define PRINTA  func_list.printA
+#define PRINTB  func_list.printB
 
-struct FUNC_LIST{
-	void (*printA)(struct FUNC_LIST *func_list);
-	void (*printB)(struct FUNC_LIST *func_list);
-};
+typedef struct FUNC_LIST
+{
+	void (*printA)();
+	void (*printB)();
+}list;
 
-typedef void (*FUNC)(struct FUNC_LIST *func_list);
+list func_list = {0};
+
+typedef void (*FUNC)();
+
 
 int main()
 {
@@ -25,7 +31,6 @@ int main()
 	char *lib_path = NULL;//动态库的路径
 	
 	FUNC func = NULL;
-	struct FUNC_LIST func_list = {0};
 	
 	//打开配置文件
 	if(0 > (fd = open(CONFIG_PATH, O_RDONLY)))
@@ -60,25 +65,27 @@ int main()
 			goto err;
 		}
 		
-		//获取功能函数存入函数表中
-		func = (FUNC)dlsym(handle, "printA");
-		if(func != NULL)
-			func_list.printA = func;
-		
-		func = (FUNC)dlsym(handle, "printB");
-		if(func != NULL)
-			func_list.printB = func;
-		
 		lib_path = strtok(NULL, ",");
+		
+		//调用注册函数
+		func = (FUNC)dlsym(handle, "func_regist_B");
+		if(func != NULL)
+		{
+			func();
+			continue;
+		}
+		
+		func = (FUNC)dlsym(handle, "func_regist_A");
+		if(func != NULL)
+		{
+			func();
+		}
 	}	
 		
-	if((func_list.printA != NULL) && (func_list.printB != NULL))
-		func_list.printA(&func_list);
-		
-	
-	
-	//关闭动态链接库
-    dlclose(handle); 
+	if((PRINTA != NULL) && (PRINTB != NULL))
+	{
+		PRINTA();
+	}
 	
 err:
 	close(fd);
